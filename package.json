@@ -1,0 +1,22 @@
+{
+  "name": "yard-memory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A weekly memory of Jamaica: the most compelling stories from Jamaican newsrooms and X, grouped, ranked and retold.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "update": "node src/run.js",
+    "build": "node src/build.js",
+    "sample": "WEEK=2026-W46 node src/run.js --offline fixtures/sample-items.json && node src/build.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "1.1.2",
+    "@anthropic-ai/bedrock-sdk": "1.1.2",
+    "@anthropic-ai/sdk": "1.8.0",
+    "cheerio": "1.2.0"
+  }
+}
