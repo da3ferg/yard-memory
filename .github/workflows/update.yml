@@ -21,6 +21,8 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    env:
+      HAS_AWS_KEYS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -36,11 +38,28 @@ jobs:
 
       - run: npm test
 
+      # Claude runs on Amazon Bedrock. Pick one way to sign in to AWS:
+      # a role assumed through GitHub OIDC (recommended, no stored keys)...
+      - name: Sign in to AWS (OIDC role)
+        if: vars.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      # ...or stored access keys.
+      - name: Sign in to AWS (access keys)
+        if: vars.AWS_ROLE_ARN == '' && env.HAS_AWS_KEYS == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
       - name: Read the news and rank this week
         run: node src/run.js
         env:
-          # Optional. Without it, stories use the outlets' own headlines and summaries.
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Without AWS, stories use the outlets' own headlines and summaries.
+          BEDROCK_MODEL: ${{ vars.BEDROCK_MODEL || 'anthropic.claude-opus-5-5' }}
           # Optional. Without it, the X section is left out.
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           X_QUERY: ${{ vars.X_QUERY }}

@@ -9,6 +9,7 @@ import { fetchX } from "./fetch-x.js";
 import { cluster, talkFor, freshness, score } from "./stories.js";
 import { retell } from "./retell.js";
 import { groupHeadlines } from "./group.js";
+import { claudeEnabled } from "./claude.js";
 import { OUTLET_BY_ID } from "./sources.js";
 import { readJson, writeJson, weekId, weekRange, weekLabel } from "./util.js";
 
@@ -62,7 +63,7 @@ async function main() {
   log(`Retelling ${stories.length} stories…`);
   let calls = 0;
   for (const s of stories) {
-    if (!cache[s.key] || (cache[s.key].by !== "claude" && process.env.ANTHROPIC_API_KEY)) {
+    if (!cache[s.key] || (cache[s.key].by !== "claude" && claudeEnabled())) {
       cache[s.key] = await retell(s, log);
       if (cache[s.key].by === "claude") calls++;
     }

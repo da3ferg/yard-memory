@@ -1,4 +1,4 @@
-// Runs grouping and retelling against a local stand-in for the Claude API, to
+// Runs grouping and retelling against a local stand-in for Bedrock, to
 // check the requests the app sends and how it reads the replies.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -20,10 +20,11 @@ const server = http.createServer((req, res) => {
   });
 });
 
-test("grouping and retelling talk to the Claude API correctly", async () => {
+test("grouping and retelling talk to Claude on Bedrock correctly", async () => {
   await new Promise((r) => server.listen(0, r));
-  process.env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${server.address().port}`;
-  process.env.ANTHROPIC_API_KEY = "test-key";
+  process.env.ANTHROPIC_BEDROCK_MANTLE_BASE_URL = `http://127.0.0.1:${server.address().port}`;
+  process.env.AWS_REGION = "us-east-1";
+  process.env.AWS_BEARER_TOKEN_BEDROCK = "test-key";
   const { groupHeadlines } = await import("../src/group.js");
   const { retell } = await import("../src/retell.js");
   const items = [
@@ -37,9 +38,9 @@ test("grouping and retelling talk to the Claude API correctly", async () => {
   assert.equal(story.by, "claude");
   assert.equal(story.section, "recovery");
   const req = seen[1];
-  assert.equal(req.body.model, "claude-opus-5-5");
+  assert.equal(req.url, "/v1/messages");
+  assert.equal(req.body.model, "anthropic.claude-opus-5-5");
   assert.equal(req.body.output_config.format.type, "json_schema");
-  assert.equal(req.body.fallbacks, "default");
-  assert.match(req.headers["anthropic-beta"], /server-side-fallback-2026-07-01/);
+  assert.equal(req.headers.authorization, "Bearer test-key");
   server.close();
 });

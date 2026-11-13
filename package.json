@@ -4,7 +4,9 @@
   "private": true,
   "description": "A weekly memory of Jamaica: the most compelling stories from Jamaican newsrooms and X, grouped, ranked and retold.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "update": "node src/run.js",
     "build": "node src/build.js",
@@ -12,6 +14,8 @@
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "1.1.2",
+    "@anthropic-ai/bedrock-sdk": "1.1.2",
     "@anthropic-ai/sdk": "1.8.0",
     "cheerio": "1.2.0"
   }
