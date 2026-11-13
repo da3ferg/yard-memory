@@ -1,0 +1,67 @@
+name: Update Yard Memory
+
+on:
+  schedule:
+    # Every 4 hours. 05:17 UTC is 12:17 AM in Kingston.
+    - cron: "17 1,5,9,13,17,21 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", ".github/workflows/update.yml", "package*.json"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: yard-memory-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Read the news and rank this week
+        run: node src/run.js
+        env:
+          # Optional. Without it, stories use the outlets' own headlines and summaries.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Optional. Without it, the X section is left out.
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_QUERY: ${{ vars.X_QUERY }}
+          MAX_STORIES: ${{ vars.MAX_STORIES || '30' }}
+
+      - name: Save this week to the archive
+        run: |
+          git config user.name "yard-memory-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Update $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
+
+      - name: Build the site
+        run: node src/build.js
+        env:
+          SHOW_PUBLISHER_IMAGES: ${{ vars.SHOW_PUBLISHER_IMAGES || 'true' }}
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
